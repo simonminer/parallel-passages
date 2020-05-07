@@ -1,0 +1,22 @@
+{
+  "name": "parallel-passages",
+  "version": "1.0.0",
+  "description": "Compare Bible verses/passages across translations",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simonminer/parallel-passages.git"
+  },
+  "author": "Simon Miner <simon.miner@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/simonminer/parallel-passages/issues"
+  },
+  "homepage": "https://github.com/simonminer/parallel-passages#readme"
+}
