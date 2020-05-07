@@ -21,18 +21,13 @@ var logger = getLogger();
  * and return them in a hash.
  */
 function getCommandLineOptions() {
-  const options = getopts(process.argv.slice(2), {
-    alias: {
-    },
-    string: [
-    ],
-    boolean: [
-    ],
-    default: {
-    }
-  });
-
-  return options;
+    const options = getopts(process.argv.slice(2), {
+        alias: {},
+        string: [],
+        boolean: [],
+        default: {}
+    });
+    return options;
 }
 
 /*
@@ -42,47 +37,50 @@ function getCommandLineOptions() {
  *
  */
 function getLogger() {
-  const {
-    createLogger,
-    format,
-    transports
-  } = require('winston');
-  const {
-    combine,
-    timestamp,
-    label,
-    printf
-  } = format;
-  const log_directory = "./logs";
-  require('winston-daily-rotate-file');
-  const logFormat = printf(({
+    const {
+        createLogger,
+        format,
+        transports
+    } = require('winston');
+
+    const {
+        combine,
+        timestamp,
+        label,
+        printf
+    } = format;
+
+    require('winston-daily-rotate-file');
+    const logFormat = printf(({
     level,
-    message,
-    timestamp
-  }) => {
-    return `${timestamp} [${level} - ${message}`;
-  });
-  let filename = path.join(log_directory, `${path.basename( process.argv[1] )}`);
+        message,
+        timestamp
+    }) => {
+        return `${timestamp} [${level} - ${message}`;
+    });
 
-  const logger = createLogger({
-    level: options['log-level'],
-    format: combine(
-      timestamp({
-        format: 'YYYY-MM-DD HH:mm:ss'
-      }),
-      format.errors({
-        stack: true
-      }),
-      logFormat
-    ),
-    transports: [
-      new transports.DailyRotateFile({
-        datePattern: 'YYYY-MM-DD',
-        filename: `${filename}.log`
-      }),
-      new transports.Console()
-    ]
-  });
+    const logDirectory = "./logs";
+    let filename = path.join(logDirectory, `${path.basename( process.argv[1] )}`);
 
-  return logger;
+    const logger = createLogger({
+        level: options['log-level'],
+        format: combine(
+            timestamp({
+                format: 'YYYY-MM-DD HH:mm:ss'
+            }),
+            format.errors({
+                stack: true
+            }),
+            logFormat
+        ),
+        transports: [
+            new transports.DailyRotateFile({
+                datePattern: 'YYYY-MM-DD',
+                filename: `${filename}.log`
+            }),
+            new transports.Console()
+        ]
+    });
+
+    return logger;
 }
