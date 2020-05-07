@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/simonminer/parallel-passages#readme",
   "dependencies": {
+    "dotenv-safe": "^8.2.0",
     "getopts": "^2.2.5",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
