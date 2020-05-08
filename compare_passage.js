@@ -46,7 +46,7 @@ function getCommandLineOptions() {
         ],
         default: {
             language: "English",
-            verbose: false
+            verbose: true
         },
         alias: {
             l: 'language',
@@ -112,19 +112,19 @@ function getLogger() {
 }
 
 /*
- * const responseBody = executeApiRequest( path );
+ * const responseBody = executeApiRequest( apiPath );
  *
  * Performs an HTTP request on the specified API path.
  * Returns  the data from the response body
  * if the request is successful, and throws
  * an error otherwise.
  */
-async function executeApiRequest( path ) {
-    if ( !path ) {
-        throw "No path specified to 'executeApiRequest' function";
+async function executeApiRequest( apiPath ) {
+    if ( !apiPath ) {
+        throw "No API path specified to 'executeApiRequest' function";
     }
 
-    const url = process.env.API_BASE_URL + path;
+    const url = process.env.API_BASE_URL + apiPath;
     const headers = {
         accept: '*/*',
         "api-key": process.env.API_KEY
@@ -144,43 +144,65 @@ async function executeApiRequest( path ) {
 }
 
 /*
- * const translationMap = getBibleTranslationMap();
+ * const data  = loadData( file, apiPath );
  *
- * Retrieve Bible translation data as a dictionary
- * mapping translation name or abbreviation to id.
+ * Reads JSON from the specified file (basename) or
+ * API path (if the file is unavailable or stale).
+ * If the data is retrieved from the API, this
+ * function saves it to the given file so
+ * it will be available locally later.
  */
+async function loadData ( file, apiPath ) {
+    if ( !file ) {
+        throw "No filespecified to 'loading' function";
+    }
+    if ( !apiPath ) {
+        throw "No API path specified to 'loading' function";
+    }
 
-async function getBibleTranslationMap () {
+    var type = file.match(/([^\/]+)\.\w+$/)[1];
 
-    logger.debug( "Loading Bible translation data." );
-    var bibles;
-
+    var data;
     try {
 
-        // Is recent Bible translation data not locally available?
-        const biblesFile  = process.env.CACHE_DIRECTORY + "/bibles.json";
-        if ( !fs.existsSync( biblesFile )
-            || fs.statSync( biblesFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
+        // Is recent data not locally available?
+        const dataFile  = process.env.CACHE_DIRECTORY + "/" + file;
+        if ( !fs.existsSync( dataFile )
+            || fs.statSync( dataFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
 
-            // Fetch Bible translation data via the API.
-            logger.debug( "Requesting  Bible translation data from server." );
-            bibles = await executeApiRequest( "/bibles" );
+            // Fetch data via the API.
+            logger.debug( `Requesting ${type} data from server.` );
+            data = await executeApiRequest( apiPath );
 
-            // Store the Bible translation data locally.
-            logger.debug( `Writing Bible translation data to file ${biblesFile}` );
-            fs.writeFileSync( biblesFile, JSON.stringify( bibles, null, 4 ) );
+            // Store the data locally.
+            logger.debug( `Writing ${type} data to file ${dataFile}.` );
+            fs.writeFileSync( dataFile, JSON.stringify( data, null, 4 ) );
         }
 
-        // Otherwise, read the Bible translation data from the local file.
+        // Otherwise, read the data from the local file.
         else {
-            logger.debug( `Reading Bible translation data from file ${biblesFile}` );
-            bibles = JSON.parse( fs.readFileSync( biblesFile ) );
+            logger.debug( `Reading ${type} data from file ${dataFile}.` );
+            data = JSON.parse( fs.readFileSync( dataFile ) );
         }
 
     }
     catch ( err ) {
-        throw `Error loading Bible translation data: ${err}`;
+        throw `Error loading ${type} data: ${err}`;
     }
+
+    return data;
+}
+
+/*
+ * const translationMap = getBibleTranslationMap();
+ *
+ * Retrieves Bible translation data as a dictionary
+ * mapping translation name or abbreviation to id.
+ */
+async function getBibleTranslationMap () {
+
+    logger.debug( "Loading Bible translation data." );
+    const bibles = await loadData( 'bibles.json', '/bibles' );
 
     // Generate the Bible translation map.
     var translationMap = {};
