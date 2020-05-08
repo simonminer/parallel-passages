@@ -22,7 +22,8 @@ var translations = undefined;
 ( async () => {
     try {
         translations = await getBibleTranslationData();
-        logger.info( "translations = " + JSON.stringify( translations ) );
+        // logger.info( "translations = " + JSON.stringify( translations ) );
+        logger.info( "Got Bible translation data." );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -121,6 +122,7 @@ async function executeApiRequest( path ) {
         "api-key": process.env.API_KEY
     };
 
+    logger.info( `Requesting URL ${url}...` );
     var responseBody;
     await axios.get( url, { headers: headers } )
         .then( response => {
@@ -141,7 +143,37 @@ async function executeApiRequest( path ) {
  */
 
 async function getBibleTranslationData () {
-    const translationData = await executeApiRequest( "/bibles" );
-    return translationData;
+
+    logger.info( "Loading Bible translation data." );
+    var bibleData;
+
+    try {
+
+        // Is recent Bible translation data not locally available?
+        const biblesFile  = process.env.CACHE_DIRECTORY + "/bibles.txt";
+        if ( !fs.existsSync( biblesFile )
+            || fs.statSync( biblesFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
+
+            // Fetch Bible translation data via the API.
+            logger.info( "Requesting  Bible translation data from server." );
+            bibleData = await executeApiRequest( "/bibles" );
+
+            // Store the Bible translation data locally.
+            logger.info( `Writing Bible translation data to file ${biblesFile}` );
+            fs.writeFileSync( biblesFile, JSON.stringify( bibleData ) );
+        }
+
+        // Otherwise, read the Bible translation data from the local file.
+        else {
+            logger.info( `Reading Bible translation data from file ${biblesFile}` );
+            bibleData = fs.readFileSync( biblesFile );
+        }
+
+    }
+    catch ( err ) {
+        throw `Error loading Bible translation data: ${err}`;
+    }
+
+    return bibleData;
 }
 
