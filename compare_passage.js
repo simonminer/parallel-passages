@@ -144,7 +144,12 @@ async function executeApiRequest( apiPath ) {
         .catch( ( err ) => {
             throw `Error requesting URL ${url}: ${err}`;
         });
-    
+
+    // Make sure data was returned by the request.
+    if (responseBody.data.length == 0) {
+        throw `No data returned from request to URL: ${url}`;
+    }
+
     return responseBody;
 }
 
