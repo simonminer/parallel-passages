@@ -16,14 +16,12 @@ var logger = getLogger();
 
 /********************************** Main Program *************************************/
 
-logger.info( `${path.basename( process.argv[1] )} starting run...` );
+logger.debug( `${path.basename( process.argv[1] )} starting run...` );
 
 var translations = undefined;
 ( async () => {
     try {
         translations = await getBibleTranslationMap();
-        // logger.info( "translations = " + JSON.stringify( translations ) );
-        logger.info( "Got Bible translation data." );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -40,10 +38,20 @@ var translations = undefined;
  */
 function getCommandLineOptions() {
     const options = getopts(process.argv.slice(2), {
-        alias: {},
-        string: [],
-        boolean: [],
-        default: {}
+        string: [
+            "language"
+        ],
+        boolean: [
+            'verbose'
+        ],
+        default: {
+            language: "English",
+            verbose: false
+        },
+        alias: {
+            l: 'language',
+            v: 'verbose'
+        },
     });
     return options;
 }
@@ -81,7 +89,7 @@ function getLogger() {
     let filename = path.join(logDirectory, `${path.basename( process.argv[1] )}`);
 
     const logger = createLogger({
-        level: options['log-level'],
+        level: options.verbose ? "debug" : "info",
         format: combine(
             timestamp({
                 format: 'YYYY-MM-DD HH:mm:ss'
@@ -122,7 +130,7 @@ async function executeApiRequest( path ) {
         "api-key": process.env.API_KEY
     };
 
-    logger.info( `Requesting URL ${url}...` );
+    logger.debug( `Requesting URL ${url}...` );
     var responseBody;
     await axios.get( url, { headers: headers } )
         .then( response => {
@@ -144,7 +152,7 @@ async function executeApiRequest( path ) {
 
 async function getBibleTranslationMap () {
 
-    logger.info( "Loading Bible translation data." );
+    logger.debug( "Loading Bible translation data." );
     var bibles;
 
     try {
@@ -155,17 +163,17 @@ async function getBibleTranslationMap () {
             || fs.statSync( biblesFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
 
             // Fetch Bible translation data via the API.
-            logger.info( "Requesting  Bible translation data from server." );
+            logger.debug( "Requesting  Bible translation data from server." );
             bibles = await executeApiRequest( "/bibles" );
 
             // Store the Bible translation data locally.
-            logger.info( `Writing Bible translation data to file ${biblesFile}` );
+            logger.debug( `Writing Bible translation data to file ${biblesFile}` );
             fs.writeFileSync( biblesFile, JSON.stringify( bibles, null, 4 ) );
         }
 
         // Otherwise, read the Bible translation data from the local file.
         else {
-            logger.info( `Reading Bible translation data from file ${biblesFile}` );
+            logger.debug( `Reading Bible translation data from file ${biblesFile}` );
             bibles = JSON.parse( fs.readFileSync( biblesFile ) );
         }
 
@@ -176,12 +184,17 @@ async function getBibleTranslationMap () {
 
     // Generate the Bible translation map.
     var translationMap = {};
+    var translationCount = 0;
     bibles.data.forEach( function ( bible ) {
-        if ( bible.language.id == "eng") {
+        if ( bible.language.name == options.language ) {
             translationMap[ bible.nameLocal ] = bible.id;
             translationMap[ bible.abbreviationLocal ] = bible.id;
+            translationCount += 1;
         }
     });
+    logger.debug( `Loaded data for ${translationCount} ${options.language} Bible ` 
+        + ( translationCount == 1 ? "translation" : "translations" ) 
+        + '.' );
 
     return translationMap;
 }
