@@ -39,16 +39,21 @@ var translations = undefined;
 function getCommandLineOptions() {
     const options = getopts(process.argv.slice(2), {
         string: [
-            "language"
+            "api-base-url", "api-key", "cache-directory", "cache-ttl", "language"
         ],
         boolean: [
             'verbose'
         ],
         default: {
+            "api-base-url": process.env.API_BASE_URL,
+            "api-key": process.env.API_KEY,
+            "cache-directory": process.env.CACHE_DIRECTORY,
+            "cache-ttl": process.env.CACHE_TTL,
             language: "English",
             verbose: true
         },
         alias: {
+            k: 'api-key',
             l: 'language',
             v: 'verbose'
         },
@@ -124,10 +129,10 @@ async function executeApiRequest( apiPath ) {
         throw "No API path specified to 'executeApiRequest' function";
     }
 
-    const url = process.env.API_BASE_URL + apiPath;
+    const url = options['api-base-url'] + apiPath;
     const headers = {
         accept: '*/*',
-        "api-key": process.env.API_KEY
+        "api-key": options['api-key']
     };
 
     logger.debug( `Requesting URL ${url}...` );
@@ -166,9 +171,9 @@ async function loadData ( file, apiPath ) {
     try {
 
         // Is recent data not locally available?
-        const dataFile  = process.env.CACHE_DIRECTORY + "/" + file;
+        const dataFile  = options['cache-directory'] + "/" + file;
         if ( !fs.existsSync( dataFile )
-            || fs.statSync( dataFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
+            || fs.statSync( dataFile ).mtime.getTime() < ( Date.now() - options['cache-ttl'] ) ) {
 
             // Fetch data via the API.
             logger.debug( `Requesting ${type} data from server.` );
