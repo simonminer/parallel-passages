@@ -21,7 +21,7 @@ logger.info( `${path.basename( process.argv[1] )} starting run...` );
 var translations = undefined;
 ( async () => {
     try {
-        translations = await getBibleTranslationData();
+        translations = await getBibleTranslationMap();
         // logger.info( "translations = " + JSON.stringify( translations ) );
         logger.info( "Got Bible translation data." );
     }
@@ -136,37 +136,37 @@ async function executeApiRequest( path ) {
 }
 
 /*
- * const translationData = getBibleTranslationData();
+ * const translationMap = getBibleTranslationMap();
  *
  * Retrieve Bible translation data as a dictionary
  * mapping translation name or abbreviation to id.
  */
 
-async function getBibleTranslationData () {
+async function getBibleTranslationMap () {
 
     logger.info( "Loading Bible translation data." );
-    var bibleData;
+    var bibles;
 
     try {
 
         // Is recent Bible translation data not locally available?
-        const biblesFile  = process.env.CACHE_DIRECTORY + "/bibles.txt";
+        const biblesFile  = process.env.CACHE_DIRECTORY + "/bibles.json";
         if ( !fs.existsSync( biblesFile )
             || fs.statSync( biblesFile ).mtime.getTime() < ( Date.now() - process.env.CACHE_TTL ) ) {
 
             // Fetch Bible translation data via the API.
             logger.info( "Requesting  Bible translation data from server." );
-            bibleData = await executeApiRequest( "/bibles" );
+            bibles = await executeApiRequest( "/bibles" );
 
             // Store the Bible translation data locally.
             logger.info( `Writing Bible translation data to file ${biblesFile}` );
-            fs.writeFileSync( biblesFile, JSON.stringify( bibleData ) );
+            fs.writeFileSync( biblesFile, JSON.stringify( bibles, null, 4 ) );
         }
 
         // Otherwise, read the Bible translation data from the local file.
         else {
             logger.info( `Reading Bible translation data from file ${biblesFile}` );
-            bibleData = fs.readFileSync( biblesFile );
+            bibles = JSON.parse( fs.readFileSync( biblesFile ) );
         }
 
     }
@@ -174,6 +174,15 @@ async function getBibleTranslationData () {
         throw `Error loading Bible translation data: ${err}`;
     }
 
-    return bibleData;
+    // Generate the Bible translation map.
+    var translationMap = {};
+    bibles.data.forEach( function ( bible ) {
+        if ( bible.language.id == "eng") {
+            translationMap[ bible.nameLocal ] = bible.id;
+            translationMap[ bible.abbreviationLocal ] = bible.id;
+        }
+    });
+
+    return translationMap;
 }
 
