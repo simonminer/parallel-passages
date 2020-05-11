@@ -16,12 +16,16 @@ var logger = getLogger();
 
 /********************************** Main Program *************************************/
 
-logger.debug( `${path.basename( process.argv[1] )} starting run...` );
+logger.debug( `${path.basename( process.argv[1] )} starting run ...` );
 
-var translations = undefined;
+// Translations are in a comma-separated list in the --translations/-t CLI argument.
+const translations = options.translations.toLowerCase().split( /\s*,\s*/ );
+
 ( async () => {
     try {
-        translations = await getBibleTranslationMap();
+        const translationMap = await getBibleTranslationMap();
+        // Use the first translation to look up Bible book data.
+        const bookMap = await getBibleBookMap( translationMap[ translations[0] ] );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -39,7 +43,8 @@ var translations = undefined;
 function getCommandLineOptions() {
     const options = getopts(process.argv.slice(2), {
         string: [
-            "api-base-url", "api-key", "cache-directory", "cache-ttl", "language"
+            "api-base-url", "api-key", "cache-directory", "cache-ttl", "language",
+            'translations'
         ],
         boolean: [
             'verbose'
@@ -50,11 +55,13 @@ function getCommandLineOptions() {
             "cache-directory": process.env.CACHE_DIRECTORY,
             "cache-ttl": process.env.CACHE_TTL,
             language: "English",
+            translations: "KJV",
             verbose: true
         },
         alias: {
             k: 'api-key',
             l: 'language',
+            t: 'translations',
             v: 'verbose'
         },
     });
@@ -135,7 +142,7 @@ async function executeApiRequest( apiPath ) {
         "api-key": options['api-key']
     };
 
-    logger.debug( `Requesting URL ${url}...` );
+    logger.debug( `Requesting URL ${url} ...` );
     var responseBody;
     await axios.get( url, { headers: headers } )
         .then( response => {
@@ -231,3 +238,24 @@ async function getBibleTranslationMap () {
     return translationMap;
 }
 
+/*
+ * const bookMap = getBibleBookMap( translationId );
+ *
+ * Retrieves Bible book data as a dictionary
+ * mapping book name and abbreviation to id.
+ */
+async function getBibleBookMap ( translationId ) {
+
+    logger.debug( "Loading Bible book data." );
+    const books = await loadData( 'books.json', `/bibles/${translationId}/books` );
+
+    // Generate the Bible books map.
+    var bookMap = {};
+    books.data.forEach( function ( book ) {
+        bookMap[ book.name.toLowerCase() ] = book.id;
+        bookMap[ book.abbreviation.toLowerCase() ] = book.id;
+    });
+    logger.debug( `Loaded data for ${Object.keys( bookMap ).length} books of the Bible.`  );
+
+    return bookMap;
+}
