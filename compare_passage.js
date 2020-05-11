@@ -20,6 +20,11 @@ logger.debug( `${path.basename( process.argv[1] )} starting run ...` );
 
 // Translations are in a comma-separated list in the --translations/-t CLI argument.
 const translations = options.translations.toLowerCase().split( /\s*,\s*/ );
+const passage = options._.length ? options._[0] : null;
+if ( passage == null) {
+   logger.error( "Please specifiy a Bible verse or passage reference." ) ;
+    process.exit();
+}
 
 ( async () => {
     try {
@@ -43,12 +48,12 @@ const translations = options.translations.toLowerCase().split( /\s*,\s*/ );
  */
 function getCommandLineOptions() {
     const options = getopts(process.argv.slice(2), {
+        boolean: [
+            'verbose'
+        ],
         string: [
             "api-base-url", "api-key", "cache-directory", "cache-ttl", "language",
             'translations'
-        ],
-        boolean: [
-            'verbose'
         ],
         default: {
             "api-base-url": process.env.API_BASE_URL,
