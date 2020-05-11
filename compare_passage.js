@@ -24,8 +24,9 @@ const translations = options.translations.toLowerCase().split( /\s*,\s*/ );
 ( async () => {
     try {
         const translationMap = await getBibleTranslationMap();
-        // Use the first translation to look up Bible book data.
-        const bookMap = await getBibleBookMap( translationMap[ translations[0] ] );
+        // Look up books from the KJV or the first translation passed to the program
+        const bookTranslation = "kjv" in translationMap ? "kjv" : translations[0];
+        const bookMap = await getBibleBookMap( translationMap[ bookTranslation ] );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -251,11 +252,13 @@ async function getBibleBookMap ( translationId ) {
 
     // Generate the Bible books map.
     var bookMap = {};
+    var bookCount = 0;
     books.data.forEach( function ( book ) {
         bookMap[ book.name.toLowerCase() ] = book.id;
         bookMap[ book.abbreviation.toLowerCase() ] = book.id;
+        bookCount += 1;
     });
-    logger.debug( `Loaded data for ${Object.keys( bookMap ).length} books of the Bible.`  );
+    logger.debug( `Loaded data for ${bookCount} books of the Bible.`  );
 
     return bookMap;
 }
