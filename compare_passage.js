@@ -219,8 +219,8 @@ async function getBibleTranslationMap () {
     var translationCount = 0;
     bibles.data.forEach( function ( bible ) {
         if ( bible.language.name == options.language ) {
-            translationMap[ bible.nameLocal ] = bible.id;
-            translationMap[ bible.abbreviationLocal ] = bible.id;
+            translationMap[ bible.nameLocal.toLowerCase() ] = bible.id;
+            translationMap[ bible.abbreviationLocal.toLowerCase() ] = bible.id;
             translationCount += 1;
         }
     });
