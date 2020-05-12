@@ -20,8 +20,8 @@ logger.debug( `${path.basename( process.argv[1] )} starting run ...` );
 
 // Translations are in a comma-separated list in the --translations/-t CLI argument.
 const translations = options.translations.toLowerCase().split( /\s*,\s*/ );
-const passage = options._.length ? options._[0] : null;
-if ( passage == null) {
+const reference = options._.length ? options._[0] : null;
+if ( reference == null) {
    logger.error( "Please specifiy a Bible verse or passage reference." ) ;
     process.exit();
 }
@@ -32,6 +32,7 @@ if ( passage == null) {
         // Look up books from the KJV or the first translation passed to the program
         const bookTranslation = "kjv" in translationMap ? "kjv" : translations[0];
         const bookMap = await getBibleBookMap( translationMap[ bookTranslation ] );
+        const passage = parseReference( reference, bookMap );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -266,4 +267,40 @@ async function getBibleBookMap ( translationId ) {
     logger.debug( `Loaded data for ${bookCount} books of the Bible.`  );
 
     return bookMap;
+}
+
+/*
+ * const passage = parseReference( reference, bookMap );
+ *
+ * Parses the specified reference, doing some rudimentary
+ * validation, and returning a passage identifier suitable
+ * for passing to the API
+ */
+function parseReference( reference, bookMap ) {
+    const referenceParts = reference.match( /^(.+?)(\s+(\d.*))?$/ );
+
+    // Parse and map the Bible book name.
+    const bookName = referenceParts[1].toLowerCase();
+    var passageParts = [];
+    if (!bookName) {
+        throw `No book name found in Bible reference ${reference}`;
+    }
+    else if ( !( bookName in bookMap ) ) {
+        throw `Invalid Bible book name or abbreviation: ${bookName}`;
+    }
+    else {
+        passageParts.push( bookMap[bookName] );
+    }
+
+    // Normalize the chapter and verse numbers.
+    if ( referenceParts[3] ) {
+        const chapterAndVerse = referenceParts[3].replace( /\s*:\s*/, '.' );
+        passageParts.push( chapterAndVerse );
+    }
+
+    // Put it all together.
+    const passage = passageParts.join( '.' );
+    logger.debug( `Bible reference "${reference}" maps to passage "${passage}".` );
+
+    return passage;
 }
