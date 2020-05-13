@@ -10,6 +10,7 @@ const getopts = require("getopts")
 require('dotenv-safe').config();
 const exec = util.promisify(require("child_process").exec);
 const axios = require("axios");
+const chapterAndVerse = require('chapter-and-verse')
 
 const options = getCommandLineOptions();
 var logger = getLogger();
@@ -304,31 +305,14 @@ async function getBibleBookMap ( translationId ) {
  * for passing to the API
  */
 function parseReference( reference, bookMap ) {
-    const referenceParts = reference.match( /^(.+?)(\s+(\d.*))?$/ );
 
-    // Parse and map the Bible book name.
-    const bookName = referenceParts[1].toLowerCase();
-    var passageParts = [];
-    if (!bookName) {
-        throw `No book name found in Bible reference ${reference}`;
-    }
-    else if ( !( bookName in bookMap ) ) {
-        throw `Invalid Bible book name or abbreviation: ${bookName}`;
-    }
-    else {
-        passageParts.push( bookMap[bookName] );
+    // Attempt to parse the reference.
+    const cv = chapterAndVerse( reference );
+    if ( !cv.success ) {
+        throw `Error parsing Bible reference ${reference}: ${cv.reason}`;
     }
 
-    // Normalize the chapter and verse numbers.
-    if ( referenceParts[3] ) {
-        const chapterAndVerse = referenceParts[3].replace( /\s*:\s*/, '.' );
-        passageParts.push( chapterAndVerse );
-    }
-
-    // Put it all together.
-    const passage = passageParts.join( '.' );
-    logger.debug( `Bible reference "${reference}" maps to passage "${passage}".` );
-
+    var passage = [ bookMap[ cv.book.name.toLowerCase() ], cv.chapter, cv.from ].join( '.' );
     return passage;
 }
 
