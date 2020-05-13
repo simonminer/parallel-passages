@@ -21,6 +21,7 @@
   "homepage": "https://github.com/simonminer/parallel-passages#readme",
   "dependencies": {
     "axios": "^0.19.2",
+    "chapter-and-verse": "^3.0.4",
     "dotenv-safe": "^8.2.0",
     "getopts": "^2.2.5",
     "winston": "^3.2.1",
