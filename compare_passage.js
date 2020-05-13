@@ -305,20 +305,30 @@ async function getBibleBookMap ( translationId ) {
  * for passing to the API
  */
 function parseReference( reference, bookMap ) {
+    logger.debug( `Parsing Bible reference "${reference}" ...` );
 
     // Attempt to parse the reference.
     const cv = chapterAndVerse( reference );
     if ( !cv.success ) {
-        throw `Error parsing Bible reference ${reference}: ${cv.reason}`;
+        throw `Error parsing Bible reference "${reference}": ${cv.reason}`;
     }
 
-    var passage = [ bookMap[ cv.book.name.toLowerCase() ], cv.chapter, cv.from ].join( '.' );
+    // Assemble the components of the reference.
+    var parts = [ bookMap[ cv.book.name.toLowerCase() ] ];
+    if ( cv.chapter ) {
+        parts.push( cv.chapter );
+    }
+    if ( cv.from ) {
+        parts.push( cv.from );
+    }
+    var passage = parts.join( '.' );
 
     // Add the ending verse for passage ranges.
     if ( cv.from != cv.to ) {
         passage += "-" + [ bookMap[ cv.book.name.toLowerCase() ], cv.chapter, cv.to ].join( '.' );
     }
 
+    logger.debug( `Bible reference "${reference}" parsed to passage "${passage}".` );
     return passage;
 }
 
