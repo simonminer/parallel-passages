@@ -70,7 +70,7 @@ function getCommandLineOptions() {
             "cache-ttl": process.env.CACHE_TTL,
             language: "English",
             translations: "KJV",
-            verbose: true
+            verbose: false
         },
         alias: {
             k: 'api-key',
