@@ -33,6 +33,8 @@ if ( reference == null) {
         const bookTranslation = "kjv" in translationMap ? "kjv" : translations[0];
         const bookMap = await getBibleBookMap( translationMap[ bookTranslation ] );
         const passage = parseReference( reference, bookMap );
+        const passages = await getTranslationPassages( passage, translations, translationMap );
+        console.log( JSON.stringify( passages, null, 2 ) );
     }
     catch ( err ) {
         logger.error( `${path.basename( process.argv[1] )} aborting with error: ${err}` );
@@ -131,19 +133,19 @@ function getLogger() {
 }
 
 /*
- * const responseBody = executeApiRequest( apiPath );
+ * const responseBody = executeApiRequest( uri );
  *
- * Performs an HTTP request on the specified API path.
- * Returns  the data from the response body
+ * Performs an HTTP request on the specified API URI.
+ * Returns the data from the response body
  * if the request is successful, and throws
  * an error otherwise.
  */
-async function executeApiRequest( apiPath ) {
-    if ( !apiPath ) {
-        throw "No API path specified to 'executeApiRequest' function";
+async function executeApiRequest( uri ) {
+    if ( !uri ) {
+        throw "No API URI specified to 'executeApiRequest' function";
     }
 
-    const url = options['api-base-url'] + apiPath;
+    const url = options['api-base-url'] + uri;
     const headers = {
         accept: '*/*',
         "api-key": options['api-key']
@@ -168,20 +170,20 @@ async function executeApiRequest( apiPath ) {
 }
 
 /*
- * const data  = loadData( file, apiPath );
+ * const data  = loadData( file, uri );
  *
  * Reads JSON from the specified file (basename) or
- * API path (if the file is unavailable or stale).
+ * API URI (if the file is unavailable or stale).
  * If the data is retrieved from the API, this
  * function saves it to the given file so
  * it will be available locally later.
  */
-async function loadData ( file, apiPath ) {
+async function loadData ( file, uri ) {
     if ( !file ) {
         throw "No filespecified to 'loading' function";
     }
-    if ( !apiPath ) {
-        throw "No API path specified to 'loading' function";
+    if ( !uri ) {
+        throw "No API URI specified to 'loading' function";
     }
 
     var type = file.match(/([^\/]+)\.\w+$/)[1];
@@ -196,7 +198,7 @@ async function loadData ( file, apiPath ) {
 
             // Fetch data via the API.
             logger.debug( `Requesting ${type} data from server.` );
-            data = await executeApiRequest( apiPath );
+            data = await executeApiRequest( uri );
 
             // Store the data locally.
             logger.debug( `Writing ${type} data to file ${dataFile}.` );
@@ -303,4 +305,39 @@ function parseReference( reference, bookMap ) {
     logger.debug( `Bible reference "${reference}" maps to passage "${passage}".` );
 
     return passage;
+}
+
+/*
+ * const passages = getTranslationPassages( passage, translations, translationMap );
+ *
+ * Retrieves the text of the Bible verse(s) in the
+ * specified passage for each of the translations in
+ * the specified list.  Returns a dictionary whose
+ * key/value pairs are the translation and the passage text
+ * for that translation.
+ */
+async function getTranslationPassages ( passage, translations, translationMap ) {
+
+    logger.debug( `Fetching text of ${passage} for translations ${options.translations}.` );
+
+    // Compose the API URL.
+    const translationIds = translations.map( id => translationMap[id] );
+    const primaryTranslationId = translationIds.shift();
+    var uri = `/bibles/${primaryTranslationId}/passages/${passage}`
+        + "?content-type=text&include-verse-numbers=false";
+    if ( translationIds.length ) {
+        uri += '&parallels=' + translationIds.join( ',' );
+    }
+
+    const response = await executeApiRequest( uri );
+
+    // Parse the responde data.
+    var passages = {};
+    for (var i = 0, l = translations.length; i < l; i++) {
+        var content = i == 0 ? response.data.content : response.data.parallels[i - 1].content;
+        passages[ translations[i] ] = content;
+    }
+
+    logger.debug( `Retrieved text of ${passage} for ${Object.keys( passages ).length} Bible translations.` );
+    return passages;
 }
