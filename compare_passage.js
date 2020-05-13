@@ -313,6 +313,12 @@ function parseReference( reference, bookMap ) {
     }
 
     var passage = [ bookMap[ cv.book.name.toLowerCase() ], cv.chapter, cv.from ].join( '.' );
+
+    // Add the ending verse for passage ranges.
+    if ( cv.from != cv.to ) {
+        passage += "-" + [ bookMap[ cv.book.name.toLowerCase() ], cv.chapter, cv.to ].join( '.' );
+    }
+
     return passage;
 }
 
