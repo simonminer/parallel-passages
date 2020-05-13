@@ -28,12 +28,17 @@ if ( reference == null) {
 
 ( async () => {
     try {
+        // Parse and validate the list of desired Bible translations.
         const translationMap = await getBibleTranslationMap();
+        const translationIds = validateTranslations( translations, translationMap );
+
         // Look up books from the KJV or the first translation passed to the program
         const bookTranslation = "kjv" in translationMap ? "kjv" : translations[0];
         const bookMap = await getBibleBookMap( translationMap[ bookTranslation ] );
+
+        // Parse adn look up the passage in the desired translations.
         const passage = parseReference( reference, bookMap );
-        const passages = await getTranslationPassages( passage, translations, translationMap );
+        const passages = await getTranslationPassages( passage, translations, translationIds );
         console.log( JSON.stringify( passages, null, 2 ) );
     }
     catch ( err ) {
@@ -248,6 +253,26 @@ async function getBibleTranslationMap () {
 }
 
 /*
+ * const translationIds = validateTranslations( translations, translationMap );
+ *
+ * Looks up and validates each Bible translation in the specified
+ * list, returning a list of the corresopnding translation IDs.
+ */
+
+function validateTranslations( translations, translationMap ) {
+    var translationIds = [];
+    translations.forEach( function ( translation ) {
+        if ( translation in translationMap ) {
+            translationIds.push( translationMap[translation] );
+        }
+        else {
+            throw `Invalid translation "${translation}"`;
+        }
+    });
+    return translationIds;
+}
+
+/*
  * const bookMap = getBibleBookMap( translationId );
  *
  * Retrieves Bible book data as a dictionary
@@ -308,7 +333,7 @@ function parseReference( reference, bookMap ) {
 }
 
 /*
- * const passages = getTranslationPassages( passage, translations, translationMap );
+ * const passages = getTranslationPassages( passage, translations, translationIds );
  *
  * Retrieves the text of the Bible verse(s) in the
  * specified passage for each of the translations in
@@ -316,12 +341,11 @@ function parseReference( reference, bookMap ) {
  * key/value pairs are the translation and the passage text
  * for that translation.
  */
-async function getTranslationPassages ( passage, translations, translationMap ) {
+async function getTranslationPassages ( passage, translations, translationIds ) {
 
     logger.debug( `Fetching text of ${passage} for translations ${options.translations}.` );
 
     // Compose the API URL.
-    const translationIds = translations.map( id => translationMap[id] );
     const primaryTranslationId = translationIds.shift();
     var uri = `/bibles/${primaryTranslationId}/passages/${passage}`
         + "?content-type=text&include-verse-numbers=false";
