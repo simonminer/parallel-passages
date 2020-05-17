@@ -1,8 +1,8 @@
 {
-  "name": "parallel-passages",
+  "name": "traversal",
   "version": "1.0.0",
   "description": "Compare Bible verses/passages across translations",
-  "main": "index.js",
+  "main": "tranversal.js",
   "directories": {
     "test": "test"
   },
