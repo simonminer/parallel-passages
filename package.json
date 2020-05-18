@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/simonminer/parallel-passages.git"
+    "url": "git+https://github.com/simonminer/traversal.git"
   },
   "author": "Simon Miner <simon.miner@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/simonminer/parallel-passages/issues"
+    "url": "https://github.com/simonminer/traversal/issues"
   },
-  "homepage": "https://github.com/simonminer/parallel-passages#readme",
+  "homepage": "https://github.com/simonminer/traversal#readme",
   "dependencies": {
     "axios": "^0.19.2",
     "chapter-and-verse": "^3.0.4",
@@ -26,5 +26,8 @@
     "getopts": "^2.2.5",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
+  },
+  "devDependencies": {
+    "jest": "26.0.1"
   }
 }
