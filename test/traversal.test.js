@@ -5,7 +5,7 @@
  *
  */
 
-const traversals = require( '../traversal' );
+const traversals = require( '../lib/traversal' );
 const Traversal = traversals.Traversal;
 
 test( "constructor", () => {
