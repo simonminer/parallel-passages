@@ -5,12 +5,13 @@
  *
  */
 
-const traversals = require( '../lib/traversal' );
-const Traversal = traversals.Traversal;
+const Traversal = require( '../lib/traversal' );
 
-test( "constructor", () => {
-    const foo = "bar";
-    const traversal = new Traversal( foo );
+test( 'constructor and default field values', () => {
+    const traversal = new Traversal();
     expect( traversal instanceof Traversal ).toBe( true );
-    expect( traversal.foo ).toBe( "bar" );
+    expect( traversal.language ).toBe( 'English' );
+    expect( Array.isArray( traversal.translations ) ).toBe( true );
+    expect( traversal.translations.length ).toBe( 1 );
+    expect( traversal.translations[0] ).toBe( 'KJV' );
 });
