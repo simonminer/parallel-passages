@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/simonminer/traversal#readme",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "chapter-and-verse": "^3.0.4",
     "dotenv-safe": "^8.2.0",
     "getopts": "^2.2.5",
